@@ -2,7 +2,7 @@
 
 在微信中运行主流 AI 编程 CLI 工具 —— 通过微信 ClawBot 官方 iLink Bot API 实现。
 
-**支持的工具：** Claude Code / Codex CLI / Gemini CLI / Hermes Agent / Kimi Code / OpenCode
+**支持的工具：** Claude Code / Codex CLI / Gemini CLI / Hermes Agent / Kimi Code / OpenClaw / OpenCode
 
 ## 它是什么
 
@@ -18,7 +18,7 @@ claude -p / codex exec / gemini -p / hermes chat -q / kimi --print / opencode -p
 
 ## 功能
 
-- **6 大 CLI 工具**，通过 `@` 前缀随时切换
+- **7 大 CLI 工具**，通过 `@` 前缀随时切换
 - **最高权限默认开启**
 - **AskUserQuestion**：Claude Code 的交互式提问转发到微信（Agent SDK）
 - **会话续接**：连续对话自动保持上下文
@@ -42,6 +42,7 @@ npm install -g @openai/codex                # Codex CLI
 npm install -g @google/gemini-cli           # Gemini CLI
 curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash  # Hermes Agent
 curl -LsSf https://code.kimi.com/install.sh | bash  # Kimi Code
+npm install -g openclaw@latest              # OpenClaw
 brew install opencode-ai/tap/opencode       # OpenCode
 ```
 
@@ -65,6 +66,7 @@ codex           # ChatGPT 账号
 gemini          # 设置 GEMINI_API_KEY 或 OAuth
 hermes model    # Hermes 选择模型/提供商
 kimi login      # Kimi OAuth
+openclaw onboard  # OpenClaw 设置向导
 # OpenCode: 设置 ANTHROPIC_API_KEY / OPENAI_API_KEY 等环境变量
 ```
 
@@ -80,6 +82,7 @@ kimi login      # Kimi OAuth
 | `@gemini 解释代码` | Gemini CLI |
 | `@hermes 分析项目` | Hermes Agent |
 | `@kimi 重构模块` | Kimi Code |
+| `@openclaw 分析项目` | OpenClaw |
 | `@opencode 分析项目` | OpenCode |
 
 切换后后续消息默认发给该工具。
@@ -181,15 +184,15 @@ Claude Code 需要你做选择时，问题自动转发到微信：
 | `/yolo` | mode=auto + effort=max |
 | `/fast` | effort=low |
 | `/reset` | 重置所有设置 |
-| `/cc` `/cx` `/gm` `/hm` `/km` `/oc` | 快速切工具 |
+| `/cc` `/cx` `/gm` `/hm` `/km` `/claw` `/oc` | 快速切工具 |
 
 ## 权限模式
 
-| 模式 | Claude | Codex | Gemini | Hermes | Kimi | OpenCode |
-|---|---|---|---|---|---|---|
-| `auto` | `--dangerously-skip-permissions` | `--yolo` | `--approval-mode yolo` | `--yolo` | `--print` (自带) | `-p` (自带) |
-| `safe` | 默认权限 | `--full-auto` | `--approval-mode default` | 默认 | 默认 | — |
-| `plan` | `--permission-mode plan` | `--sandbox read-only` | `--approval-mode plan` | — | — | — |
+| 模式 | Claude | Codex | Gemini | Hermes | Kimi | OpenClaw | OpenCode |
+|---|---|---|---|---|---|---|---|
+| `auto` | `--dangerously-skip-permissions` | `--yolo` | `--approval-mode yolo` | `--yolo` | `--print` (自带) | `--local` | `-p` (自带) |
+| `safe` | 默认权限 | `--full-auto` | `--approval-mode default` | 默认 | 默认 | 默认 | — |
+| `plan` | `--permission-mode plan` | `--sandbox read-only` | `--approval-mode plan` | — | — | — | — |
 
 ## 配置
 
@@ -224,7 +227,8 @@ src/
 │   ├── gemini.ts         # gemini -p + stdin 传参
 │   ├── hermes.ts         # hermes chat -q -Q
 │   ├── kimi.ts           # kimi --print + --thinking
-│   ├── opencode.ts       # opencode -p -f json
+│   ├── openclaw.ts       # openclaw agent --message --local
+│   ├── opencode.ts       # opencode run --format json
 │   └── registry.ts       # 自动检测已安装工具
 └── bridge/               # 桥接逻辑
     ├── session.ts        # 会话持久化

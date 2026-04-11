@@ -5,6 +5,7 @@ import { CodexAdapter } from './codex.js';
 import { GeminiAdapter } from './gemini.js';
 import { HermesAdapter } from './hermes.js';
 import { KimiAdapter } from './kimi.js';
+import { OpenClawAdapter } from './openclaw.js';
 import { OpenCodeAdapter } from './opencode.js';
 
 export class AdapterRegistry {
@@ -18,6 +19,7 @@ export class AdapterRegistry {
     this.register(new GeminiAdapter());
     this.register(new HermesAdapter());
     this.register(new KimiAdapter());
+    this.register(new OpenClawAdapter());
     this.register(new OpenCodeAdapter());
   }
 

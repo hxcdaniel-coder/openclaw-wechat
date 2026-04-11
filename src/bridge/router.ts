@@ -19,6 +19,7 @@ const TOOL_ALIASES: Record<string, string> = {
   gemini: 'gemini', gm: 'gemini',
   hermes: 'hermes', hm: 'hermes',
   kimi: 'kimi', km: 'kimi',
+  openclaw: 'openclaw', claw: 'openclaw',
   opencode: 'opencode', oc: 'opencode',
 };
 
@@ -216,10 +217,10 @@ export class Router {
           '/yolo  auto+effort max',
           '/fast  effort low',
           '/reset  重置所有设置',
-          '/cc /cx /gm /hm /km /oc  切工具',
+          '/cc /cx /gm /hm /km /claw /oc  切工具',
           '',
           '— 发消息 —',
-          '@claude/@codex/@gemini/@hermes/@kimi/@opencode  指定工具',
+          '@claude/@codex/@gemini/@hermes/@kimi/@openclaw/@opencode  指定工具',
           '>>  接力(传上条结果)',
           '@tool1>tool2  链式调用',
         ].join('\n'));
@@ -673,6 +674,8 @@ export class Router {
         this.sessions.update(uid, { defaultTool: 'hermes' }); await reply('→ hermes'); return true;
       case 'kimi': case 'km':
         this.sessions.update(uid, { defaultTool: 'kimi' }); await reply('→ kimi'); return true;
+      case 'openclaw': case 'claw':
+        this.sessions.update(uid, { defaultTool: 'openclaw' }); await reply('→ openclaw'); return true;
       case 'opencode': case 'oc':
         this.sessions.update(uid, { defaultTool: 'opencode' }); await reply('→ opencode'); return true;
 
