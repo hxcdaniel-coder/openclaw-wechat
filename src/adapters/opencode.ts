@@ -60,32 +60,35 @@ export class OpenCodeAdapter implements CLIAdapter {
         if (timer) clearTimeout(timer);
         if (opts.signal?.aborted) { resolve({ text: '已取消', error: true }); return; }
 
-        const text = stripAnsi(stdout.trim() || stderr.trim());
-        const sessionMatch = text.match(/session[:\s]+([a-f0-9-]{20,})/i);
-
         try {
           const lines = stdout.trim().split('\n').filter(Boolean);
           const results: string[] = [];
+          let sessionId: string | undefined;
+
           for (const line of lines) {
             try {
               const r = JSON.parse(line);
-              if (r.type === 'content' && r.content) {
-                results.push(r.content);
+              if (r.type === 'text' && r.part?.text) {
+                results.push(r.part.text);
               }
-              if (r.session_id) {
-                resolve({
-                  text: results.join('') || r.content || r.result || text,
-                  error: !!r.error,
-                  sessionId: r.session_id,
-                });
-                return;
+              if (r.sessionID) {
+                sessionId = r.sessionID;
               }
             } catch { continue; }
           }
-          resolve({ text: text || `exit ${code}`, error: code !== 0, sessionId: sessionMatch ? sessionMatch[1] : undefined });
-        } catch {
-          resolve({ text: text || `exit ${code}`, error: code !== 0, sessionId: sessionMatch ? sessionMatch[1] : undefined });
-        }
+
+          if (results.length > 0 || sessionId) {
+            resolve({
+              text: results.join('\n') || '完成',
+              error: code !== 0,
+              sessionId,
+            });
+            return;
+          }
+        } catch { /* fallthrough */ }
+
+        const text = stripAnsi(stdout.trim() || stderr.trim());
+        resolve({ text: text || `exit ${code}`, error: code !== 0 });
       });
       proc.on('error', (err) => {
         if (timer) clearTimeout(timer);
