@@ -2,6 +2,24 @@ import { log } from '../utils/logger.js';
 import type { CLIAdapter, ExecOptions, ExecResult, AdapterCapabilities } from './base.js';
 import { commandExists, spawnProc, setupAbort, setupTimeout, stripAnsi } from './base.js';
 
+function cleanJsonLines(text: string): string {
+  const lines = text.split('\n').filter(Boolean);
+  const results: string[] = [];
+  for (const line of lines) {
+    try {
+      const r = JSON.parse(line);
+      if (r.type === 'text' && r.part?.text) {
+        results.push(r.part.text);
+      }
+    } catch {
+      if (!line.startsWith('{')) {
+        results.push(line);
+      }
+    }
+  }
+  return results.join('\n');
+}
+
 export class OpenCodeAdapter implements CLIAdapter {
   readonly name = 'opencode';
   readonly displayName = 'OpenCode';
@@ -71,15 +89,15 @@ export class OpenCodeAdapter implements CLIAdapter {
               if (r.type === 'text' && r.part?.text) {
                 results.push(r.part.text);
               }
-              if (r.sessionID) {
+              if (r.sessionID && !sessionId) {
                 sessionId = r.sessionID;
               }
-            } catch { continue; }
+            } catch { /* skip invalid json lines */ }
           }
 
-          if (results.length > 0 || sessionId) {
+          if (results.length > 0) {
             resolve({
-              text: results.join('\n') || '完成',
+              text: results.join('\n'),
               error: code !== 0,
               sessionId,
             });
@@ -87,8 +105,9 @@ export class OpenCodeAdapter implements CLIAdapter {
           }
         } catch { /* fallthrough */ }
 
-        const text = stripAnsi(stdout.trim() || stderr.trim());
-        resolve({ text: text || `exit ${code}`, error: code !== 0 });
+        const rawText = stripAnsi(stdout.trim() || stderr.trim());
+        const cleanText = cleanJsonLines(rawText);
+        resolve({ text: cleanText || `exit ${code}`, error: code !== 0 });
       });
       proc.on('error', (err) => {
         if (timer) clearTimeout(timer);
