@@ -2,6 +2,22 @@ import { log } from '../utils/logger.js';
 import type { CLIAdapter, ExecOptions, ExecResult, AdapterCapabilities } from './base.js';
 import { commandExists, spawnProc, setupAbort, setupTimeout, stripAnsi } from './base.js';
 
+function cleanOpenClawOutput(text: string): string {
+  const lines = text.split('\n');
+  const filtered = lines.filter(line => {
+    const l = line.trim();
+    if (!l) return false;
+    if (l.startsWith('[plugins]')) return false;
+    if (l.startsWith('[mnemo]')) return false;
+    if (l.startsWith('Config warnings:')) return false;
+    if (l.startsWith('- plugins.')) return false;
+    if (l.startsWith('Registered')) return false;
+    if (l.startsWith('Server mode')) return false;
+    return true;
+  });
+  return filtered.join('\n').trim();
+}
+
 export class OpenClawAdapter implements CLIAdapter {
   readonly name = 'openclaw';
   readonly displayName = 'OpenClaw';
@@ -62,22 +78,24 @@ export class OpenClawAdapter implements CLIAdapter {
           return;
         }
 
-        const text = stripAnsi(stdout.trim() || stderr.trim());
+        const stdoutText = stripAnsi(stdout.trim());
+        const stderrText = stripAnsi(stderr.trim());
 
         try {
-          const r = JSON.parse(stdout);
+          const r = JSON.parse(stdoutText);
           const content = r.result || r.response || r.message || r.content;
           resolve({
-            text: typeof content === 'string' ? content : text,
+            text: typeof content === 'string' ? content : cleanOpenClawOutput(stdoutText || stderrText),
             error: !!r.error || code !== 0,
             sessionId: r.sessionId || r.session_id,
           });
           return;
         } catch { /* not JSON */ }
 
-        const sessionMatch = text.match(/session[:\s]+([a-f0-9-]{8,})/i);
+        const cleanText = cleanOpenClawOutput(stdoutText || stderrText);
+        const sessionMatch = cleanText.match(/session[:\s]+([a-f0-9-]{8,})/i);
         resolve({
-          text: text || `exit ${code}`,
+          text: cleanText || `完成`,
           error: code !== 0,
           sessionId: sessionMatch ? sessionMatch[1] : undefined,
         });
