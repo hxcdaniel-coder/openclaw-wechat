@@ -3,6 +3,7 @@ import type { CLIAdapter } from './base.js';
 import { ClaudeAdapter } from './claude.js';
 import { CodexAdapter } from './codex.js';
 import { GeminiAdapter } from './gemini.js';
+import { HermesAdapter } from './hermes.js';
 import { KimiAdapter } from './kimi.js';
 import { OpenCodeAdapter } from './opencode.js';
 
@@ -15,6 +16,7 @@ export class AdapterRegistry {
     this.register(new ClaudeAdapter());
     this.register(new CodexAdapter());
     this.register(new GeminiAdapter());
+    this.register(new HermesAdapter());
     this.register(new KimiAdapter());
     this.register(new OpenCodeAdapter());
   }
