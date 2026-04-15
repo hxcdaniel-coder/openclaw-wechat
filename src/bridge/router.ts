@@ -1037,11 +1037,44 @@ export class Router {
       this.lastResponse.set(uid, { tool: adapter.displayName, text: result.text });
       this.sessions.update(uid, { defaultTool: toolName });
 
-      await this.ilink.sendText(uid, formatResponse(notice + result.text, {
-        tool: adapter.displayName,
-        duration: result.duration || (Date.now() - start),
-        error: result.error,
-      }));
+      // 检测特殊语法：[SEND_IMAGE: /path] 或 [SEND_FILE: /path filename]
+      const fullText = notice + result.text;
+      let remainingText = fullText;
+
+      // 检测 [SEND_IMAGE: /path]
+      const imageMatch = remainingText.match(/\[SEND_IMAGE:\s*([^\]]+)\]/);
+      if (imageMatch) {
+        const imagePath = imageMatch[1].trim();
+        try {
+          await this.ilink.sendImage(uid, imagePath);
+          remainingText = remainingText.replace(imageMatch[0], '').trim();
+        } catch (e) {
+          log.error(`[sendImage] 失败: ${(e as Error).message}`);
+        }
+      }
+
+      // 检测 [SEND_FILE: /path filename]
+      const fileMatch = remainingText.match(/\[SEND_FILE:\s*([^\]]+)\]/);
+      if (fileMatch) {
+        const parts = fileMatch[1].trim().split(' ');
+        const filePath = parts[0];
+        const fileName = parts.slice(1).join(' ') || undefined;
+        try {
+          await this.ilink.sendFile(uid, filePath, fileName);
+          remainingText = remainingText.replace(fileMatch[0], '').trim();
+        } catch (e) {
+          log.error(`[sendFile] 失败: ${(e as Error).message}`);
+        }
+      }
+
+      // 如果还有剩余文本，发送文本
+      if (remainingText) {
+        await this.ilink.sendText(uid, formatResponse(remainingText, {
+          tool: adapter.displayName,
+          duration: result.duration || (Date.now() - start),
+          error: result.error,
+        }));
+      }
     } catch (err: unknown) {
       if (!abort.signal.aborted) {
         log.error(`[${toolName}] 失败:`, err);
