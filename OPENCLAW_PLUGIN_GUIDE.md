@@ -33,8 +33,10 @@
 
 | 功能 | 命令/语法 | 说明 |
 |------|----------|------|
-| 发送图片 | `/sendimage <图片路径>` | 发送图片到微信 |
-| 发送文件 | `/sendfile <文件路径> [文件名]` | 发送文件到微信 |
+| 发送图片（微信命令） | `/sendimage <图片路径>` | 发送图片到微信 |
+| 发送文件（微信命令） | `/sendfile <文件路径> [文件名]` | 发送文件到微信 |
+| 发送图片（Agent 回复语法） | `[SEND_IMAGE: /path/to/image.png]` | Agent 回复中使用此语法自动发送图片 |
+| 发送文件（Agent 回复语法） | `[SEND_FILE: /path/to/file.pdf 文件名.pdf]` | Agent 回复中使用此语法自动发送文件 |
 
 ---
 
@@ -117,6 +119,23 @@ openclaw-wechat/
 ---
 
 ## 技术细节
+
+### Agent 发送媒体文件的特殊语法
+
+Agent 可以在回复中使用特殊语法来自动发送文件/图片：
+
+```
+这是图片：
+[SEND_IMAGE: /path/to/image.png]
+
+这是文件：
+[SEND_FILE: /path/to/file.pdf 文件名.pdf]
+```
+
+**工作原理**：
+- `router.exec()` 在发送文本前检测 `[SEND_IMAGE: ...]` 和 `[SEND_FILE: ...]` 标记
+- 检测到后先调用 `sendImage()` / `sendFile()` 发送媒体文件
+- 从文本中移除这些标记，发送剩余文本（如果有）
 
 ### 媒体文件发送流程
 
