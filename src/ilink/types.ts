@@ -118,3 +118,13 @@ export interface GetConfigResponse {
   typing_ticket: string;
   ret: number;
 }
+
+export interface GetUploadUrlResponse {
+  ret: number;
+  errcode?: number;
+  errmsg?: string;
+  upload_url: string;
+  encrypt_query_param: string;
+  aes_key: string;
+  encrypt_type?: number;
+}

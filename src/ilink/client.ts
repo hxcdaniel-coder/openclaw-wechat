@@ -1,5 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { generateWechatUin } from '../utils/crypto.js';
+import { readFileSync } from 'node:fs';
+import {
+  encryptAesEcb,
+  generateAesKey,
+  generateWechatUin,
+} from '../utils/crypto.js';
 import { log } from '../utils/logger.js';
 import { savePollCursor, loadPollCursor, saveContextTokens } from '../config.js';
 import type {
@@ -8,6 +13,8 @@ import type {
   GetUpdatesResponse,
   MessageItem,
   GetConfigResponse,
+  GetUploadUrlResponse,
+  CDNMedia,
 } from './types.js';
 
 const CHANNEL_VERSION = '1.0.2';
@@ -296,6 +303,131 @@ export class ILinkClient {
         base_info: this.baseInfo(),
       }),
     });
+  }
+
+  // ─── Media Upload ──────────────────────────────────────────
+
+  /**
+   * Get CDN upload URL and encryption key
+   */
+  private async getUploadUrl(userId: string): Promise<GetUploadUrlResponse> {
+    const contextToken = this.contextTokens.get(userId);
+    if (!contextToken) {
+      throw new Error(`No context_token for user ${userId} (user must send a message first)`);
+    }
+
+    const res = await fetch(`${this.credentials.baseUrl}/ilink/bot/getuploadurl`, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({
+        ilink_user_id: userId,
+        context_token: contextToken,
+        base_info: this.baseInfo(),
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`getuploadurl failed: HTTP ${res.status} ${body}`);
+    }
+
+    const data = (await res.json()) as GetUploadUrlResponse;
+    if (data.ret !== undefined && data.ret !== 0) {
+      throw new Error(`getuploadurl failed: ${data.errmsg || `ret=${data.ret}`}`);
+    }
+
+    return data;
+  }
+
+  /**
+   * Upload encrypted file to CDN
+   */
+  private async uploadToCDN(uploadUrl: string, encryptedData: Buffer): Promise<void> {
+    const res = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/octet-stream',
+      },
+      body: encryptedData as unknown as BodyInit,
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`CDN upload failed: HTTP ${res.status} ${body}`);
+    }
+  }
+
+  /**
+   * Send image message
+   */
+  async sendImage(userId: string, imagePath: string): Promise<void> {
+    const contextToken = this.contextTokens.get(userId);
+    if (!contextToken) {
+      throw new Error(`No context_token for user ${userId} (user must send a message first)`);
+    }
+
+    // 1. Read image file
+    const imageData = readFileSync(imagePath);
+
+    // 2. Get upload URL and AES key
+    const uploadInfo = await this.getUploadUrl(userId);
+    const aesKey = Buffer.from(uploadInfo.aes_key, 'base64');
+
+    // 3. Encrypt image with AES-128-ECB
+    const encryptedData = encryptAesEcb(imageData, aesKey);
+
+    // 4. Upload to CDN
+    await this.uploadToCDN(uploadInfo.upload_url, encryptedData);
+
+    // 5. Send message with image item
+    const clientId = `img-${randomUUID()}`;
+    const media: CDNMedia = {
+      encrypt_query_param: uploadInfo.encrypt_query_param,
+      aes_key: uploadInfo.aes_key,
+    };
+
+    await this.sendRawMessage(userId, contextToken, [
+      { type: 2 as const, image_item: { media } },
+    ]);
+
+    log.debug(`[sendImage] sent to ${userId.substring(0, 12)}...`);
+  }
+
+  /**
+   * Send file message
+   */
+  async sendFile(userId: string, filePath: string, fileName?: string): Promise<void> {
+    const contextToken = this.contextTokens.get(userId);
+    if (!contextToken) {
+      throw new Error(`No context_token for user ${userId} (user must send a message first)`);
+    }
+
+    // 1. Read file
+    const fileData = readFileSync(filePath);
+    const name = fileName || filePath.split('/').pop() || 'file';
+
+    // 2. Get upload URL and AES key
+    const uploadInfo = await this.getUploadUrl(userId);
+    const aesKey = Buffer.from(uploadInfo.aes_key, 'base64');
+
+    // 3. Encrypt file with AES-128-ECB
+    const encryptedData = encryptAesEcb(fileData, aesKey);
+
+    // 4. Upload to CDN
+    await this.uploadToCDN(uploadInfo.upload_url, encryptedData);
+
+    // 5. Send message with file item
+    const clientId = `file-${randomUUID()}`;
+    const media: CDNMedia = {
+      encrypt_query_param: uploadInfo.encrypt_query_param,
+      aes_key: uploadInfo.aes_key,
+    };
+
+    await this.sendRawMessage(userId, contextToken, [
+      { type: 4 as const, file_item: { media, file_name: name, len: String(fileData.length) } },
+    ]);
+
+    log.debug(`[sendFile] sent ${name} to ${userId.substring(0, 12)}...`);
   }
 }
 

@@ -46,6 +46,20 @@ export class Router {
     });
   }
 
+  /**
+   * Send image to user
+   */
+  async sendImage(userId: string, imagePath: string): Promise<void> {
+    await this.ilink.sendImage(userId, imagePath);
+  }
+
+  /**
+   * Send file to user
+   */
+  async sendFile(userId: string, filePath: string, fileName?: string): Promise<void> {
+    await this.ilink.sendFile(userId, filePath, fileName);
+  }
+
   private resolveToolFromRefText(refText: string): string | undefined {
     // Parse tool from footer: "— DisplayName | ..."
     const footerMatch = refText.match(/— ([^\|\n]+?)(?:\s*\||\s*$)/m);
@@ -208,6 +222,37 @@ export class Router {
 
       case 'oc-resume': {
         await reply('OpenClaw 会话列表功能开发中...');
+        return true;
+      }
+
+      case 'sendimage': {
+        if (!arg) {
+          await reply('用法: /sendimage <图片路径>');
+          return true;
+        }
+        try {
+          await this.ilink.sendImage(uid, arg);
+          await reply('图片已发送');
+        } catch (e) {
+          await reply(`发送图片失败: ${(e as Error).message}`);
+        }
+        return true;
+      }
+
+      case 'sendfile': {
+        if (!arg) {
+          await reply('用法: /sendfile <文件路径> [文件名]');
+          return true;
+        }
+        const parts = arg.split(' ');
+        const filePath = parts[0];
+        const fileName = parts[1];
+        try {
+          await this.ilink.sendFile(uid, filePath, fileName);
+          await reply('文件已发送');
+        } catch (e) {
+          await reply(`发送文件失败: ${(e as Error).message}`);
+        }
         return true;
       }
 
