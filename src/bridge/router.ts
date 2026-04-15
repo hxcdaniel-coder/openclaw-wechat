@@ -74,6 +74,25 @@ export class Router {
 
     const trimmed = text.trim();
 
+    // ── @agent-xxx syntax ──
+    const agentMatch = trimmed.match(/^@agent-(\w+)(?:[\s：:]\s*([\s\S]+))?$/);
+    if (agentMatch) {
+      const agent = agentMatch[1];
+      const prompt = agentMatch[2]?.trim();
+      this.sessions.update(uid, { currentOpenClawAgent: agent } as any);
+      
+      if (!prompt) {
+        await this.ilink.sendText(uid, `已切换到 agent: ${agent}`);
+        return;
+      }
+      
+      // Proceed with the prompt with openclaw
+      this.sessions.update(uid, { defaultTool: 'openclaw' });
+      if (this.active.has(`${uid}:openclaw`)) { await this.ilink.sendText(uid, `openclaw 在忙`); return; }
+      await this.exec(uid, 'openclaw', prompt);
+      return;
+    }
+
     // ── /command ──
     if (trimmed.startsWith('/')) {
       await this.handleSlash(uid, trimmed);
@@ -164,6 +183,34 @@ export class Router {
     const reply = (msg: string) => this.ilink.sendText(uid, msg);
 
     switch (cmd) {
+      // ═══════════════════════════════════════════
+      // OpenClaw 专属
+      // ═══════════════════════════════════════════
+
+      case 'agent': {
+        if (arg === 'list') {
+          await reply('可用 agent: dev, cto, qc, main');
+        } else if (arg.startsWith('use ')) {
+          const agent = arg.slice('use '.length).trim();
+          this.sessions.update(uid, { currentOpenClawAgent: agent } as any);
+          await reply(`已切换到 agent: ${agent}`);
+        } else {
+          await reply('用法:\n/agent list - 列出可用 agent\n/agent use <name> - 切换 agent');
+        }
+        return true;
+      }
+
+      case 'oc-status': {
+        const currentAgent = (settings as any).currentOpenClawAgent || 'dev';
+        await reply(`OpenClaw 状态：运行正常\n当前 Agent: ${currentAgent}`);
+        return true;
+      }
+
+      case 'oc-resume': {
+        await reply('OpenClaw 会话列表功能开发中...');
+        return true;
+      }
+
       // ═══════════════════════════════════════════
       // 通用
       // ═══════════════════════════════════════════

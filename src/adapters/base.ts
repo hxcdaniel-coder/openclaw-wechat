@@ -11,6 +11,8 @@ export interface UserSettings {
   sessionIds: Record<string, string>;
   systemPrompt: string;
   workDir: string;
+  // ── OpenClaw ──
+  currentOpenClawAgent?: string;
 
   // ── Claude Code ──
   effort: string;
@@ -45,6 +47,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   sessionIds: {},
   systemPrompt: '',
   workDir: '',
+  currentOpenClawAgent: undefined,
   effort: 'high',
   maxTurns: 30,
   maxBudget: 0,
