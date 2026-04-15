@@ -1,7 +1,16 @@
 {
-  "name": "cli-in-wechat",
+  "name": "openclaw-wechat",
   "version": "0.1.0",
-  "description": "Run Claude Code, Codex, Gemini, Kimi, OpenCode in WeChat via iLink Bot API",
+  "description": "Run OpenClaw (and other AI CLI tools) in WeChat via official iLink Bot API - OpenClaw optimized version",
+  "author": "阿发",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hxcdaniel-coder/openclaw-wechat.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hxcdaniel-coder/openclaw-wechat/issues"
+  },
+  "homepage": "https://github.com/hxcdaniel-coder/openclaw-wechat",
   "type": "module",
   "main": "dist/index.js",
   "bin": {

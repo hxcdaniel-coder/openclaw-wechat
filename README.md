@@ -1,8 +1,19 @@
-# cli-in-wechat
+# openclaw-wechat
 
-在微信中运行主流 AI 编程 CLI 工具 —— 通过微信 ClawBot 官方 iLink Bot API 实现。
+> 🚀 **OpenClaw 优化版本** - 基于 [liangminmx/cli-in-wechat](https://github.com/liangminmx/cli-in-wechat)，重点优化 OpenClaw 体验
+
+在微信中运行 OpenClaw（以及其他 AI CLI 工具）—— 通过微信 ClawBot 官方 iLink Bot API 实现。
 
 **支持的工具：** Claude Code / Codex CLI / Gemini CLI / Hermes Agent / Kimi Code / OpenClaw / OpenCode
+
+## 本版本特点
+
+- ✅ 保持所有上游功能（Claude/Codex/Gemini/Hermes/Kimi/OpenClaw/OpenCode）
+- ✅ 重点优化 OpenClaw 体验
+- ✅ 支持多 Agent 切换
+- ✅ 深度集成 OpenClaw 会话管理
+
+---
 
 ## 它是什么
 
