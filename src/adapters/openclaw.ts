@@ -66,7 +66,7 @@ export class OpenClawAdapter implements CLIAdapter {
       const { settings } = opts;
       const args = ['agent', '--message', prompt, '--local'];
 
-      // Support for agent selection
+      // Support for agent selection - ALWAYS use currentOpenClawAgent if set
       const openClawSettings = settings as any;
       if (openClawSettings.currentOpenClawAgent) {
         args.push('--agent', openClawSettings.currentOpenClawAgent);

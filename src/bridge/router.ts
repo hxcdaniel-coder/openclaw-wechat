@@ -72,7 +72,7 @@ export class Router {
     const uid = msg.from_user_id;
     if (this.config.allowedUsers.length > 0 && !this.config.allowedUsers.includes(uid)) return;
 
-    const trimmed = text.trim();
+    let trimmed = text.trim();
 
     // ── @agent-xxx syntax ──
     const agentMatch = trimmed.match(/^@agent-(\w+)(?:[\s：:]\s*([\s\S]+))?$/);
@@ -86,11 +86,11 @@ export class Router {
         return;
       }
       
-      // Proceed with the prompt with openclaw
+      // Set default tool to openclaw and continue with normal processing
       this.sessions.update(uid, { defaultTool: 'openclaw' });
-      if (this.active.has(`${uid}:openclaw`)) { await this.ilink.sendText(uid, `openclaw 在忙`); return; }
-      await this.exec(uid, 'openclaw', prompt);
-      return;
+      // Replace @agent-xxx with just the prompt for normal processing
+      text = prompt;
+      trimmed = prompt;
     }
 
     // ── /command ──
